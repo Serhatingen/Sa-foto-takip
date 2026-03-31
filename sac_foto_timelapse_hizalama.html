@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saç Foto Takip + Onion Skin Timelapse</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#141b24;
+      --panel2:#1b2430;
+      --line:#2b3645;
+      --text:#eef4fb;
+      --muted:#9fb0c3;
+      --accent:#52a8ff;
+      --accent2:#8b5cf6;
+      --good:#27c281;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --shadow:0 16px 40px rgba(0,0,0,.28);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:linear-gradient(180deg,#0a0d12,#0f141c 40%,#0a0d12);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+    .wrap{max-width:1500px;margin:0 auto;padding:18px}
+    .hero{display:grid;grid-template-columns:1.3fr .7fr;gap:16px;margin-bottom:16px}
+    .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .title{font-size:30px;font-weight:900;letter-spacing:.2px;margin:0 0 8px}
+    .subtitle{font-size:14px;color:var(--muted);line-height:1.5;margin:0}
+    .badgeRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .badge{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03);font-size:13px;color:#dce9f8}
+    .grid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}
+    .sectionHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+    h2{margin:0;font-size:20px}
+    h3{margin:0 0 10px 0;font-size:16px}
+    .small{font-size:12px;color:var(--muted)}
+    input,select,button,textarea{font:inherit}
+    input[type="date"],input[type="range"],select,textarea{width:100%;background:#0f151d;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;outline:none}
+    input[type="range"]{padding:0;height:10px;border:none}
+    textarea{min-height:90px;resize:vertical}
+    button{padding:12px 16px;border-radius:12px;border:none;cursor:pointer;font-weight:800;transition:.15s transform ease,.15s opacity ease}
+    button:hover{transform:translateY(-1px)}
+    .btnPrimary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+    .btnGhost{background:#0f151d;color:var(--text);border:1px solid var(--line)}
+    .btnDanger{background:rgba(239,68,68,.16);color:#ffd5d5;border:1px solid rgba(239,68,68,.32)}
+    .btnGood{background:rgba(39,194,129,.14);color:#d4ffeb;border:1px solid rgba(39,194,129,.32)}
+    .buttons{display:flex;flex-wrap:wrap;gap:10px}
+    .formGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .formGrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    label{display:block;font-size:13px;color:#dce9f8;margin-bottom:6px}
+    .viewerWrap{position:relative;width:100%;aspect-ratio:3/4;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:#05080d}
+    video, .captureCanvas, .overlayImg, .guideLayer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    video.mirror, .captureCanvas.mirror{transform:scaleX(-1)}
+    .captureCanvas{display:none}
+    .overlayImg{pointer-events:none;transform-origin:center center;opacity:.35;display:none;object-fit:cover;user-select:none}
+    .guideLayer{pointer-events:none;background:
+        linear-gradient(to right, transparent calc(50% - 1px), rgba(255,255,255,.16) calc(50% - 1px), rgba(255,255,255,.16) calc(50% + 1px), transparent calc(50% + 1px)),
+        linear-gradient(to bottom, transparent calc(50% - 1px), rgba(255,255,255,.16) calc(50% - 1px), rgba(255,255,255,.16) calc(50% + 1px), transparent calc(50% + 1px));opacity:.6}
+    .cornerInfo{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;gap:10px;z-index:5}
+    .pill{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(10,14,20,.65);font-size:12px;color:#e7f1fb;backdrop-filter:blur(6px)}
+    .previewGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .previewBox{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0d131b;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;color:var(--muted);position:relative}
+    .previewBox img{width:100%;height:100%;object-fit:cover;display:block}
+    .note{padding:12px;border-radius:14px;border:1px solid rgba(82,168,255,.24);background:rgba(82,168,255,.08);color:#dcedff;font-size:13px;line-height:1.5}
+    .stack{display:grid;gap:12px}
+    .rangeRow{display:grid;grid-template-columns:1fr 82px;gap:10px;align-items:center}
+    .valueBox{text-align:center;padding:10px 0;border-radius:12px;border:1px solid var(--line);background:#0f151d;font-weight:800}
+    .thumbList{display:grid;gap:10px;max-height:920px;overflow:auto;padding-right:4px}
+    .thumb{display:grid;grid-template-columns:90px 1fr;gap:12px;padding:10px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);cursor:pointer}
+    .thumb.active{outline:2px solid rgba(82,168,255,.45)}
+    .thumb img{width:90px;height:120px;object-fit:cover;border-radius:10px;background:#0d131b}
+    .thumb .meta{font-size:13px;color:var(--muted);line-height:1.45}
+    .exportBox{display:grid;gap:12px}
+    .progress{width:100%;height:14px;border-radius:999px;background:#0f151d;border:1px solid var(--line);overflow:hidden}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .18s ease}
+    .status.good{color:var(--good)}
+    .status.warn{color:var(--warn)}
+    .status.bad{color:var(--bad)}
+    .footer{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.55}
+    .hidden{display:none!important}
+    @media (max-width:1100px){.hero,.grid,.formGrid,.formGrid3,.previewGrid{grid-template-columns:1fr}.title{font-size:26px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="card">
+        <div class="title">Saç Foto Takip + Hizalama Sistemi</div>
+        <p class="subtitle">Her gün aynı açıdan foto çek, dünkü kareyi hayalet filigran gibi üstte gör, hizalayıp yeni fotoğrafı kaydet. Sonra kayıtlı karelerden timelapse oluştur.</p>
+        <div class="badgeRow">
+          <div class="badge">Canlı kamera</div>
+          <div class="badge">Önceki gün onion-skin</div>
+          <div class="badge">Opaklık / ölçek / kaydırma</div>
+          <div class="badge">Yerel kayıt</div>
+          <div class="badge">Timelapse dışa aktar</div>
+        </div>
+      </div>
+      <div class="card stack">
+        <div>
+          <h2>Çalışma Mantığı</h2>
+          <div class="note">1) Tarihi seç.<br>2) Kamerayı başlat.<br>3) Dünkü kare otomatik filigran olarak gelsin.<br>4) Gerekirse opaklık / ölçek / X-Y kaydırma ile ince ayar yap.<br>5) Bugünkü kareyi çek ve kaydet.<br>6) Biriken kareleri timelapse olarak dışa aktar.</div>
+        </div>
+        <div class="small">Veriler tarayıcı içinde cihazında tutulur. Safari/Chrome ile telefonda açıp kullanabilirsin.</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="sectionHead">
+          <h2>Çekim Alanı</h2>
+          <div class="small">Canlı görüntü + önceki gün filigranı</div>
+        </div>
+
+        <div class="formGrid3">
+          <div>
+            <label for="shootDate">Foto tarihi</label>
+            <input type="date" id="shootDate" />
+          </div>
+          <div>
+            <label for="cameraFacing">Kamera</label>
+            <select id="cameraFacing">
+              <option value="environment">Arka kamera</option>
+              <option value="user">Ön kamera</option>
+            </select>
+          </div>
+          <div>
+            <label for="resolutionPreset">Kalite</label>
+            <select id="resolutionPreset">
+              <option value="ideal">Dengeli</option>
+              <option value="high">Yüksek</option>
+              <option value="low">Düşük</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+
+        <div class="viewerWrap" id="viewerWrap">
+          <video id="video" playsinline autoplay muted></video>
+          <canvas id="captureCanvas" class="captureCanvas"></canvas>
+          <img id="overlayImg" class="overlayImg" alt="">
+          <div class="guideLayer" id="guideLayer"></div>
+          <div class="cornerInfo">
+            <div class="pill" id="overlayLabel">Önceki gün yüklenmedi</div>
+            <div class="pill" id="cameraLabel">Kamera kapalı</div>
+          </div>
+        </div>
+
+        <div class="buttons" style="margin-top:14px">
+          <button class="btnPrimary" id="startCameraBtn">Kamerayı başlat</button>
+          <button class="btnGhost" id="captureBtn">Bugünkü kareyi çek</button>
+          <button class="btnGood" id="saveFrameBtn">Kareyi kaydet</button>
+          <button class="btnGhost" id="reloadOverlayBtn">Dünkü filigranı yükle</button>
+          <button class="btnGhost" id="toggleGuidesBtn">Kılavuz çizgileri aç/kapat</button>
+        </div>
+
+        <div class="previewGrid">
+          <div>
+            <h3>Dünkü filigran</h3>
+            <div class="previewBox" id="previousPreview">Yok</div>
+          </div>
+          <div>
+            <h3>Bugünkü çekim</h3>
+            <div class="previewBox" id="currentPreview">Henüz çekilmedi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card stack">
+        <div>
+          <div class="sectionHead">
+            <h2>Hizalama Ayarları</h2>
+            <div class="small">Filigranı rahat oturt</div>
+          </div>
+
+          <div class="rangeRow">
+            <div>
+              <label for="overlayOpacity">Filigran opaklığı</label>
+              <input type="range" id="overlayOpacity" min="0" max="100" value="35">
+            </div>
+            <div class="valueBox" id="overlayOpacityVal">35%</div>
+          </div>
+
+          <div class="rangeRow">
+            <div>
+              <label for="overlayScale">Filigran ölçeği</label>
+              <input type="range" id="overlayScale" min="70" max="130" value="100">
+            </div>
+            <div class="valueBox" id="overlayScaleVal">100%</div>
+          </div>
+
+          <div class="rangeRow">
+            <div>
+              <label for="overlayX">Sağa / sola kaydır</label>
+              <input type="range" id="overlayX" min="-120" max="120" value="0">
+            </div>
+            <div class="valueBox" id="overlayXVal">0px</div>
+          </div>
+
+          <div class="rangeRow">
+            <div>
+              <label for="overlayY">Yukarı / aşağı kaydır</label>
+              <input type="range" id="overlayY" min="-160" max="160" value="0">
+            </div>
+            <div class="valueBox" id="overlayYVal">0px</div>
+          </div>
+
+          <div class="buttons">
+            <button class="btnGhost" id="resetOverlayBtn">Filigran ayarlarını sıfırla</button>
+            <button class="btnGhost" id="toggleOverlayBtn">Filigranı aç/kapat</button>
+            <button class="btnGhost" id="mirrorBtn">Aynala</button>
+          </div>
+        </div>
+
+        <div>
+          <h2>Günlük Not</h2>
+          <label for="dailyNote">Not</label>
+          <textarea id="dailyNote" placeholder="Örn: ışık daha iyiydi, saç kuru çekildi, tepe açısı daha yakındı..."></textarea>
+        </div>
+
+        <div>
+          <h2>Durum</h2>
+          <div class="note"><div id="statusText" class="status good">Hazır.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:16px"></div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="sectionHead">
+          <h2>Timelapse Dışa Aktarım</h2>
+          <div class="small">Kayıtlı kareleri sırayla video yap</div>
+        </div>
+
+        <div class="exportBox">
+          <div class="formGrid3">
+            <div>
+              <label for="exportStartDate">Başlangıç tarihi</label>
+              <input type="date" id="exportStartDate" />
+            </div>
+            <div>
+              <label for="exportEndDate">Bitiş tarihi</label>
+              <input type="date" id="exportEndDate" />
+            </div>
+            <div>
+              <label for="exportFps">FPS</label>
+              <select id="exportFps">
+                <option value="4">4 fps</option>
+                <option value="6" selected>6 fps</option>
+                <option value="8">8 fps</option>
+                <option value="10">10 fps</option>
+                <option value="12">12 fps</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="formGrid3">
+            <div>
+              <label for="holdFrames">Her foto kaç frame kalsın</label>
+              <select id="holdFrames">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div>
+              <label for="exportWidth">Genişlik</label>
+              <select id="exportWidth">
+                <option value="720">720</option>
+                <option value="1080" selected>1080</option>
+                <option value="1440">1440</option>
+              </select>
+            </div>
+            <div>
+              <label for="exportRatio">Kadro</label>
+              <select id="exportRatio">
+                <option value="3:4" selected>3:4</option>
+                <option value="9:16">9:16</option>
+                <option value="1:1">1:1</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="buttons">
+            <button class="btnPrimary" id="exportVideoBtn">Timelapse oluştur</button>
+            <button class="btnGhost" id="downloadSelectedBtn">Seçili fotoğrafı indir</button>
+            <button class="btnDanger" id="deleteSelectedBtn">Seçili kaydı sil</button>
+          </div>
+
+          <div class="progress"><div class="bar" id="exportBar"></div></div>
+          <div class="small" id="exportStatus">Henüz dışa aktarım yapılmadı.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sectionHead">
+          <h2>Kayıtlı Günler</h2>
+          <div class="small" id="savedCount">0 kayıt</div>
+        </div>
+        <div class="thumbList" id="thumbList"></div>
+      </div>
+    </div>
+
+    <div class="footer">İpucu: Aynı ışık, aynı mesafe, mümkünse aynı saat, saç kuru/ıslak durumunu standart tut. Böylece timelapse daha temiz görünür.</div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "hairPhotoTimelapse_onion_v1";
+    const state = { data: loadData(), stream: null, overlayVisible: true, guidesVisible: true, mirrored: false, capturedDataUrl: null, selectedDate: null };
+    const $ = (id) => document.getElementById(id);
+
+    function loadData(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return { photos: {}, notes: {}, settings: {} };
+        const parsed = JSON.parse(raw);
+        return { photos: parsed.photos || {}, notes: parsed.notes || {}, settings: parsed.settings || {} };
+      }catch(e){ return { photos: {}, notes: {}, settings: {} }; }
+    }
+    function saveData(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); }
+    function toDateInput(d){ const dt = new Date(d); const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const day = String(dt.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+    function parseDate(str){ const [y,m,d] = str.split("-").map(Number); return new Date(y, m-1, d, 12, 0, 0); }
+    function addDays(str, days){ const d = parseDate(str); d.setDate(d.getDate() + days); return toDateInput(d); }
+    function compareDates(a,b){ return parseDate(a) - parseDate(b); }
+    function formatTR(str){ return parseDate(str).toLocaleDateString("tr-TR",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
+    function setStatus(text, kind="good"){ const el = $("statusText"); el.textContent = text; el.className = "status " + kind; }
+
+    function initDates(){
+      const today = toDateInput(new Date());
+      $("shootDate").value = today;
+      $("exportStartDate").value = Object.keys(state.data.photos).sort(compareDates)[0] || today;
+      $("exportEndDate").value = today;
+      state.selectedDate = today;
+    }
+
+    function bindRange(id, valId, suffix, cb){
+      const input = $(id), value = $(valId);
+      const update = () => { value.textContent = input.value + suffix; cb(); };
+      input.addEventListener("input", update);
+      update();
+    }
+
+    function updateOverlayTransform(){
+      const overlay = $("overlayImg");
+      const scale = Number($("overlayScale").value) / 100;
+      const x = Number($("overlayX").value);
+      const y = Number($("overlayY").value);
+      const mirror = state.mirrored ? " scaleX(-1)" : "";
+      overlay.style.transform = `translate(${x}px, ${y}px) scale(${scale})${mirror}`;
+      overlay.style.opacity = Number($("overlayOpacity").value) / 100;
+      overlay.style.display = (state.overlayVisible && overlay.src) ? "block" : "none";
+    }
+
+    async function startCamera(){
+      stopCamera();
+      const facing = $("cameraFacing").value;
+      const preset = $("resolutionPreset").value;
+      let width = { ideal: 1080, high: 1600, low: 720 }[preset] || 1080;
+      let height = { ideal: 1440, high: 2133, low: 960 }[preset] || 1440;
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: width }, height: { ideal: height } }, audio: false });
+        state.stream = stream;
+        const video = $("video");
+        video.srcObject = stream;
+        await video.play();
+        applyMirror();
+        $("cameraLabel").textContent = facing === "user" ? "Ön kamera açık" : "Arka kamera açık";
+        setStatus("Kamera hazır. Filigranı hizalayıp çekebilirsin.", "good");
+      }catch(err){
+        $("cameraLabel").textContent = "Kamera açılamadı";
+        setStatus("Kamera açılamadı. Tarayıcı izinlerini kontrol et.", "bad");
+      }
+    }
+
+    function stopCamera(){ if(state.stream){ state.stream.getTracks().forEach(t => t.stop()); state.stream = null; } }
+
+    function captureFrame(){
+      const video = $("video");
+      if(!video.videoWidth){ setStatus("Önce kamerayı başlat.", "warn"); return; }
+      const canvas = $("captureCanvas"), ctx = canvas.getContext("2d");
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      if(state.mirrored){ ctx.save(); ctx.scale(-1,1); ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height); ctx.restore(); }
+      else ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      state.capturedDataUrl = canvas.toDataURL("image/jpeg", 0.95);
+      $("currentPreview").innerHTML = `<img src="${state.capturedDataUrl}" alt="">`;
+      setStatus("Kare çekildi. Kaydet dersen bugünkü foto olarak saklanır.", "good");
+    }
+
+    function saveCurrentFrame(){
+      const date = $("shootDate").value;
+      if(!date){ setStatus("Tarih seç.", "warn"); return; }
+      if(!state.capturedDataUrl){ setStatus("Önce bugünkü kareyi çek.", "warn"); return; }
+      state.data.photos[date] = state.capturedDataUrl;
+      state.data.notes[date] = $("dailyNote").value.trim();
+      saveData();
+      state.selectedDate = date;
+      renderThumbs();
+      updateOverlayForDate(date);
+      $("savedCount").textContent = Object.keys(state.data.photos).length + " kayıt";
+      $("exportStartDate").value = Object.keys(state.data.photos).sort(compareDates)[0] || date;
+      $("exportEndDate").value = date;
+      setStatus(date + " kaydedildi.", "good");
+    }
+
+    function resetOverlayControls(){
+      $("overlayOpacity").value = 35;
+      $("overlayScale").value = 100;
+      $("overlayX").value = 0;
+      $("overlayY").value = 0;
+      ["overlayOpacity","overlayScale","overlayX","overlayY"].forEach(id => $(id).dispatchEvent(new Event("input")));
+    }
+
+    function updateOverlayForDate(date){
+      const exactPrev = addDays(date, -1);
+      let prevDate = null;
+      if(state.data.photos[exactPrev]) prevDate = exactPrev;
+      else{
+        const older = Object.keys(state.data.photos).filter(d => compareDates(d, date) < 0).sort(compareDates);
+        if(older.length) prevDate = older[older.length - 1];
+      }
+
+      if(prevDate){
+        const img = state.data.photos[prevDate];
+        $("overlayImg").src = img;
+        $("overlayLabel").textContent = `Filigran: ${prevDate}`;
+        $("previousPreview").innerHTML = `<img src="${img}" alt="">`;
+      }else{
+        $("overlayImg").removeAttribute("src");
+        $("overlayLabel").textContent = "Önceki gün yüklenmedi";
+        $("previousPreview").textContent = "Yok";
+      }
+
+      const current = state.data.photos[date];
+      if(current){
+        $("currentPreview").innerHTML = `<img src="${current}" alt="">`;
+        state.capturedDataUrl = current;
+        $("dailyNote").value = state.data.notes[date] || "";
+      }else{
+        if(state.capturedDataUrl && date !== state.selectedDate) state.capturedDataUrl = null;
+        $("currentPreview").textContent = "Henüz çekilmedi";
+        $("dailyNote").value = state.data.notes[date] || "";
+      }
+      updateOverlayTransform();
+    }
+
+    function renderThumbs(){
+      const dates = Object.keys(state.data.photos).sort(compareDates);
+      $("savedCount").textContent = dates.length + " kayıt";
+      const holder = $("thumbList");
+      if(!dates.length){ holder.innerHTML = `<div class="small">Henüz kayıt yok.</div>`; return; }
+      holder.innerHTML = dates.reverse().map(date => {
+        const active = state.selectedDate === date ? "active" : "";
+        const note = escapeHtml((state.data.notes[date] || "").slice(0,80));
+        return `<div class="thumb ${active}" onclick="selectSaved('${date}')"><img src="${state.data.photos[date]}" alt=""><div><div><strong>${date}</strong></div><div class="meta">${formatTR(date)}</div><div class="meta">${note || "Not yok"}</div></div></div>`;
+      }).join("");
+    }
+
+    window.selectSaved = function(date){
+      state.selectedDate = date;
+      $("shootDate").value = date;
+      updateOverlayForDate(date);
+      renderThumbs();
+      setStatus(date + " seçildi.", "good");
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+
+    function escapeHtml(s){ return String(s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+    function applyMirror(){ $("video").classList.toggle("mirror", state.mirrored); $("captureCanvas").classList.toggle("mirror", state.mirrored); updateOverlayTransform(); }
+    function downloadSelected(){
+      const date = state.selectedDate || $("shootDate").value;
+      if(!date || !state.data.photos[date]){ setStatus("İndirilecek kayıt yok.", "warn"); return; }
+      const a = document.createElement("a"); a.href = state.data.photos[date]; a.download = `hair-shot-${date}.jpg`; a.click();
+    }
+    function deleteSelected(){
+      const date = state.selectedDate || $("shootDate").value;
+      if(!date || !state.data.photos[date]){ setStatus("Silinecek kayıt yok.", "warn"); return; }
+      if(!confirm(date + " kaydı silinsin mi?")) return;
+      delete state.data.photos[date]; delete state.data.notes[date]; saveData();
+      state.selectedDate = $("shootDate").value = toDateInput(new Date());
+      state.capturedDataUrl = null;
+      $("currentPreview").textContent = "Henüz çekilmedi";
+      updateOverlayForDate($("shootDate").value);
+      renderThumbs();
+      setStatus(date + " silindi.", "good");
+    }
+
+    async function dataUrlToImage(dataUrl){
+      return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = dataUrl; });
+    }
+
+    async function exportTimelapse(){
+      const start = $("exportStartDate").value, end = $("exportEndDate").value;
+      if(!start || !end){ $("exportStatus").textContent = "Başlangıç ve bitiş tarihi seç."; return; }
+      const dates = Object.keys(state.data.photos).filter(d => compareDates(d, start) >= 0 && compareDates(d, end) <= 0).sort(compareDates);
+      if(!dates.length){ $("exportStatus").textContent = "Bu aralıkta foto yok."; return; }
+
+      const width = Number($("exportWidth").value), ratio = $("exportRatio").value, fps = Number($("exportFps").value), hold = Number($("holdFrames").value);
+      const height = ratio === "3:4" ? Math.round(width * 4 / 3) : ratio === "9:16" ? Math.round(width * 16 / 9) : width;
+      const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext("2d");
+
+      if(!("MediaRecorder" in window)){ $("exportStatus").textContent = "Bu tarayıcı MediaRecorder desteklemiyor."; return; }
+
+      let mimeType = "";
+      if(MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) mimeType = "video/webm;codecs=vp9";
+      else if(MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) mimeType = "video/webm;codecs=vp8";
+      else if(MediaRecorder.isTypeSupported("video/webm")) mimeType = "video/webm";
+      else{ $("exportStatus").textContent = "Uygun webm codec bulunamadı."; return; }
+
+      const stream = canvas.captureStream(fps);
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+      const chunks = [];
+      recorder.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+      const donePromise = new Promise(resolve => { recorder.onstop = resolve; });
+      recorder.start();
+      $("exportStatus").textContent = "Timelapse oluşturuluyor...";
+      $("exportBar").style.width = "0%";
+
+      for(let i=0;i<dates.length;i++){
+        const img = await dataUrlToImage(state.data.photos[dates[i]]);
+        for(let h=0; h<hold; h++){
+          ctx.clearRect(0,0,width,height);
+          drawCover(ctx, img, width, height);
+          drawDateLabel(ctx, dates[i], width, height);
+          $("exportBar").style.width = Math.round((((i*hold)+h+1)/(dates.length*hold))*100) + "%";
+          await wait(1000 / fps);
+        }
+      }
+
+      recorder.stop(); await donePromise;
+      const blob = new Blob(chunks, { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `hair-timelapse-${start}-to-${end}.webm`; a.click();
+      URL.revokeObjectURL(url);
+      $("exportStatus").textContent = dates.length + " kareden timelapse oluşturuldu.";
+      $("exportBar").style.width = "100%";
+    }
+
+    function drawCover(ctx, img, width, height){
+      const imgRatio = img.width / img.height, canvasRatio = width / height;
+      let dw, dh, dx, dy;
+      if(imgRatio > canvasRatio){ dh = height; dw = dh * imgRatio; dx = (width - dw) / 2; dy = 0; }
+      else{ dw = width; dh = dw / imgRatio; dx = 0; dy = (height - dh) / 2; }
+      ctx.drawImage(img, dx, dy, dw, dh);
+    }
+    function drawDateLabel(ctx, date, width, height){
+      ctx.save(); ctx.fillStyle = "rgba(0,0,0,.42)";
+      const padX = 14, text = date; ctx.font = "700 24px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+      const textW = ctx.measureText(text).width, boxW = textW + padX*2, boxH = 44, x = 20, y = height - 20 - boxH;
+      roundRect(ctx, x, y, boxW, boxH, 16); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fillText(text, x + padX, y + 29); ctx.restore();
+    }
+    function roundRect(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+    function wait(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    function toggleOverlay(){ state.overlayVisible = !state.overlayVisible; updateOverlayTransform(); setStatus(state.overlayVisible ? "Filigran açık." : "Filigran kapalı.", "good"); }
+    function toggleGuides(){ state.guidesVisible = !state.guidesVisible; $("guideLayer").classList.toggle("hidden", !state.guidesVisible); }
+    function setupDragOverlay(){
+      const overlay = $("overlayImg"), viewer = $("viewerWrap");
+      let dragging = false, startX = 0, startY = 0, baseX = 0, baseY = 0;
+      const getPoint = (e) => e.touches && e.touches[0] ? { x:e.touches[0].clientX, y:e.touches[0].clientY } : { x:e.clientX, y:e.clientY };
+      const start = (e) => { if(!overlay.src) return; dragging = true; const p = getPoint(e); startX = p.x; startY = p.y; baseX = Number($("overlayX").value); baseY = Number($("overlayY").value); };
+      const move = (e) => {
+        if(!dragging) return;
+        const p = getPoint(e), dx = p.x - startX, dy = p.y - startY;
+        $("overlayX").value = Math.max(-120, Math.min(120, baseX + dx));
+        $("overlayY").value = Math.max(-160, Math.min(160, baseY + dy));
+        $("overlayX").dispatchEvent(new Event("input"));
+        $("overlayY").dispatchEvent(new Event("input"));
+        if(e.cancelable) e.preventDefault();
+      };
+      const end = () => dragging = false;
+      viewer.addEventListener("mousedown", start); window.addEventListener("mousemove", move); window.addEventListener("mouseup", end);
+      viewer.addEventListener("touchstart", start, {passive:true}); window.addEventListener("touchmove", move, {passive:false}); window.addEventListener("touchend", end);
+    }
+
+    function persistSettings(){
+      state.data.settings = {
+        overlayOpacity: $("overlayOpacity").value,
+        overlayScale: $("overlayScale").value,
+        overlayX: $("overlayX").value,
+        overlayY: $("overlayY").value,
+        mirrored: state.mirrored,
+        guidesVisible: state.guidesVisible,
+        cameraFacing: $("cameraFacing").value,
+        resolutionPreset: $("resolutionPreset").value
+      };
+      saveData();
+    }
+
+    function loadSettings(){
+      const s = state.data.settings || {};
+      if(s.overlayOpacity != null) $("overlayOpacity").value = s.overlayOpacity;
+      if(s.overlayScale != null) $("overlayScale").value = s.overlayScale;
+      if(s.overlayX != null) $("overlayX").value = s.overlayX;
+      if(s.overlayY != null) $("overlayY").value = s.overlayY;
+      if(s.cameraFacing) $("cameraFacing").value = s.cameraFacing;
+      if(s.resolutionPreset) $("resolutionPreset").value = s.resolutionPreset;
+      state.mirrored = !!s.mirrored;
+      state.guidesVisible = s.guidesVisible !== false;
+      $("guideLayer").classList.toggle("hidden", !state.guidesVisible);
+      applyMirror();
+    }
+
+    $("startCameraBtn").addEventListener("click", startCamera);
+    $("captureBtn").addEventListener("click", captureFrame);
+    $("saveFrameBtn").addEventListener("click", saveCurrentFrame);
+    $("reloadOverlayBtn").addEventListener("click", () => updateOverlayForDate($("shootDate").value));
+    $("resetOverlayBtn").addEventListener("click", () => { resetOverlayControls(); persistSettings(); });
+    $("toggleOverlayBtn").addEventListener("click", toggleOverlay);
+    $("toggleGuidesBtn").addEventListener("click", () => { toggleGuides(); persistSettings(); });
+    $("mirrorBtn").addEventListener("click", () => { state.mirrored = !state.mirrored; applyMirror(); persistSettings(); });
+    $("shootDate").addEventListener("change", () => { state.selectedDate = $("shootDate").value; updateOverlayForDate($("shootDate").value); renderThumbs(); });
+    $("cameraFacing").addEventListener("change", persistSettings);
+    $("resolutionPreset").addEventListener("change", persistSettings);
+    $("dailyNote").addEventListener("change", () => {
+      const date = $("shootDate").value;
+      if(date){ state.data.notes[date] = $("dailyNote").value.trim(); saveData(); renderThumbs(); }
+    });
+    bindRange("overlayOpacity","overlayOpacityVal","%", () => { updateOverlayTransform(); persistSettings(); });
+    bindRange("overlayScale","overlayScaleVal","%", () => { updateOverlayTransform(); persistSettings(); });
+    bindRange("overlayX","overlayXVal","px", () => { updateOverlayTransform(); persistSettings(); });
+    bindRange("overlayY","overlayYVal","px", () => { updateOverlayTransform(); persistSettings(); });
+    $("exportVideoBtn").addEventListener("click", exportTimelapse);
+    $("downloadSelectedBtn").addEventListener("click", downloadSelected);
+    $("deleteSelectedBtn").addEventListener("click", deleteSelected);
+    window.addEventListener("beforeunload", stopCamera);
+
+    initDates();
+    loadSettings();
+    if(!(state.data.settings && Object.keys(state.data.settings).length)){ resetOverlayControls(); }
+    ["overlayOpacity","overlayScale","overlayX","overlayY"].forEach(id => $(id).dispatchEvent(new Event("input")));
+    updateOverlayForDate($("shootDate").value);
+    renderThumbs();
+    setupDragOverlay();
+  </script>
+</body>
+</html>
